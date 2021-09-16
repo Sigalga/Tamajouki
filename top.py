@@ -1,11 +1,3 @@
-# if using the 3-button USB keyboard:
-# 1) go to params.py and change IS_KEYBOARD_BUTTONS to True.
-# 2) type in terminal: demsg
-# the most recently plugged USB should appear last. for example:
-# [11183.293196] usb 1-1.3: ch341-uart converter now attached to ttyUSB0.
-# 3) in the game's main, update the 'port' equal in the serial port. for example:
-# serial_port = serial.Serial(port="/dev/ttyUSB0", ...
-
 # import pygame
 import random
 import sys
@@ -21,10 +13,6 @@ import serial
 
 if platform.system() == 'Windows':
     os.environ['SDL_VIDEODRIVER'] = 'windib'
-
-
-# Tamajouki
-pet = {'hunger': 0, 'energy': 256, 'waste': 0, 'age': 0, 'happiness': 0, 'power': 0}
 
 
 def render_display(image_surface, color):
@@ -58,7 +46,7 @@ def render_buttons(x, y):
         pygame.draw.ellipse(screen, PIXEL_COLOR, (x + i, y, BTN_BORDER_SIZE, BTN_BORDER_SIZE), 1)       # shadow
 
 
-def render_debug(font):
+def render_debug(font, pet):
     surf = font.render('DEBUG --', True, PIXEL_COLOR)
     screen.blit(surf, (360, 360))
     debug = (('HUNGER: %s', 'AGE: %s', 'WASTE: %d', 'ENERGY: %s', 'HAPPINESS: %s', 'POWER: %s'),
@@ -99,10 +87,6 @@ def get_offset():
     return random.randint(-3, 2)
 
 
-def get_next_img(current_anim, current_img_idx):
-    return (current_img_idx + 1) % len(current_anim)
-
-
 def trigger_sleep(stage):
     sleeping = True
     has_overlay = True
@@ -111,7 +95,7 @@ def trigger_sleep(stage):
     return current_img, overlay_img, sleeping, has_overlay
 
 
-def trigger_weapon(sel_colid, sel_rowid):
+def trigger_weapon(sel_colid, sel_rowid, pet):
     using_weapon = True
     overlay_img = null_img
     underlay_img = null_img
@@ -147,6 +131,7 @@ def get_keyboard_button(serial_string):
     else:
         button = None
     return button
+
 
 def update_serial_string(serial_port):
     # Wait until there is data waiting in the serial buffer
@@ -187,6 +172,9 @@ def main():
         serial_port, serial_string = init_serial()
     global screen, clock
     clock, screen, font, stat_font = init_game()
+
+    # Tamajouki
+    pet = {'hunger': 0, 'energy': 256, 'waste': 0, 'age': 0, 'happiness': 0, 'power': 0}
 
     # Counters
     sel_colid = 0
@@ -254,28 +242,25 @@ def main():
                     else:
                         sel_colid = 6
                         sel_rowid = sel_rowid - 1
-        elif button == 1 and not dead:   # enter/exit
-            if stage == 0:
-                if sel_colid != 2:          # egg bounce
-                    current_img = egg_bounce_img
-            if stage > 0 or sel_colid == 2:
-                if sel_colid == 0:          # eat
+        elif button == 1 and not dead:  # enter/exit
+            if sel_colid == 2:          # stats
+                stats = not stats
+            elif stage == 0:            # non-stats options, egg stage
+                current_img = egg_bounce_img
+            else:                       # non-stats options
+                if sel_colid == 0 and (pet['hunger'] >= HUNGER_CANEAT or game_over):    # eat
                     eating = True
                     overlay_img = overlay_eat
                     has_overlay = True
-                elif sel_colid == 1:        # clean
-                    if pet['waste'] >= WASTE_CANCLEAN:
-                        cleaning = True
-                        overlay_img = overlay_clean
-                        has_overlay = True
-                elif sel_colid == 2:        # stats
-                    stats = not stats
-                elif sel_colid == 3:        # sleep
-                    if pet['energy'] <= ENERGY_CANSLEEP:
-                        current_img, overlay_img, sleeping, has_overlay = trigger_sleep(stage)
-                elif 4 <= sel_colid <= 6 and not game_over:   # use weapon
+                elif sel_colid == 1 and (pet['waste'] >= WASTE_CANCLEAN or game_over):  # clean
+                    cleaning = True
+                    overlay_img = overlay_clean
+                    has_overlay = True
+                elif sel_colid == 3 and (pet['energy'] <= ENERGY_CANSLEEP):             # sleep
+                    current_img, overlay_img, sleeping, has_overlay = trigger_sleep(stage)
+                elif 4 <= sel_colid <= 6 and not game_over:                             # use weapon
                     overlay_img, underlay_img, using_weapon, has_overlay, has_underlay =\
-                        trigger_weapon(sel_colid, sel_rowid)
+                        trigger_weapon(sel_colid, sel_rowid, pet)
                     if overlay_img == overlay_bomb:
                         screen.fill(BOMB_FILL_COLOR)
                         pygame.time.set_timer(USEREVENT + 1, SECOND)
@@ -352,7 +337,7 @@ def main():
                     has_overlay = False
                     has_overlay2 = False
                     has_underlay = False
-                    if pet['hunger'] < 5 and pet['energy'] >= 256 and pet['waste'] < 5:     # powerup combo
+                    if pet['hunger'] < 5 and pet['energy'] >= 256 and pet['waste'] < 5:     # power-up combo
                         pet['power'] += WEAPON_BONUS
                 else:
                     weapon_timer += 1
@@ -462,7 +447,7 @@ def main():
             render_display(display, NONPIXEL_COLOR)
 
         # Render debug
-        render_debug(font)
+        render_debug(font, pet)
 
         # Render buttons
         if not USING_KEYBOARD_BUTTONS:
