@@ -35,8 +35,9 @@ sleep_megaevil_img =        render_image('graphics/life_phases/megaevil_sleep.pn
 sleep_ultraevil_img =       render_image('graphics/life_phases/ultraevil_sleep.png', DISPLAY_SIZE)
 sleep_zettaevil_img =       render_image('graphics/life_phases/zettaevil_sleep.png', DISPLAY_SIZE)
 sleep_insect_demon_img =    render_image('graphics/life_phases/insect_demon_sleep.png', DISPLAY_SIZE)
+sleep_sewage_devil_img =    render_image('graphics/life_phases/sewage_devil_sleep.png', DISPLAY_SIZE)
 sleep_pet_images = (sleep_baby_img, sleep_adult_img, sleep_evil_img, sleep_superevil_img, sleep_megaevil_img,
-                    sleep_ultraevil_img, sleep_zettaevil_img, sleep_insect_demon_img, sewage_devil_img)
+                    sleep_ultraevil_img, sleep_zettaevil_img, sleep_insect_demon_img, sleep_sewage_devil_img)
 
 # stats
 stat_bg_img =       render_image('graphics/stats/background.png', DISPLAY_SIZE)

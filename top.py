@@ -26,7 +26,7 @@ def render_weapon(stage):
         x = 256
         for weapon in weapon_list:              # columns
             render_option(x, y * SELECTOR_Y_GAP, weapon)
-            x += SELECTOR_GAP
+            x += SELECTOR_X_GAP
         y = y + 1
 
 
@@ -40,10 +40,10 @@ def render_option(x, y, image):
 
 
 def render_buttons(x, y):
-    for i in range(0, 288, BTN_GAP):
-        pygame.draw.ellipse(screen, BTN_BORDER_COLOR, (x + i, y, BTN_BORDER_SIZE, BTN_BORDER_SIZE))     # border
-        pygame.draw.ellipse(screen, BTN_CENTER_COLOR, (x + i + 4, y + 4, BTN_CENTER_SIZE, BTN_CENTER_SIZE))     # fill
-        pygame.draw.ellipse(screen, PIXEL_COLOR, (x + i, y, BTN_BORDER_SIZE, BTN_BORDER_SIZE), 1)       # shadow
+    for i in range(0, 3 * BTN_GAP, BTN_GAP):
+        pygame.draw.ellipse(screen, BTN_BORDER_COLOR, (x + i, y, BTN_BORDER_SIZE, BTN_BORDER_SIZE))
+        pygame.draw.ellipse(screen, BTN_CENTER_COLOR, (x + i + 4, y + 4, BTN_CENTER_SIZE, BTN_CENTER_SIZE))
+        pygame.draw.ellipse(screen, BTN_SHADOW_COLOR, (x + i, y, BTN_BORDER_SIZE, BTN_BORDER_SIZE), 1)
 
 
 def render_debug(font, pet):
@@ -89,9 +89,9 @@ def get_offset():
 
 def trigger_sleep(stage):
     sleeping = True
-    has_overlay = True
     current_img = sleep_pet_images[stage - 1]
     overlay_img = overlay_sleep
+    has_overlay = True
     return current_img, overlay_img, sleeping, has_overlay
 
 
@@ -111,10 +111,10 @@ def trigger_weapon(sel_colid, sel_rowid, pet):
 
 
 def get_button_at_pixel(x, y):
-    if 420 < y < 484:
+    if BTN_Y < y < BTN_Y + BTN_BORDER_SIZE:
         button = 0
-        for i in range(0, 288, 96):
-            if 64 + i < x < 128 + i:
+        for i in range(0, 3 * BTN_GAP, BTN_GAP):
+            if BTN_X + i < x < BTN_X + BTN_BORDER_SIZE + i:
                 return button
             else:
                 button += 1
@@ -157,7 +157,11 @@ def init_game():
     pygame.time.set_timer(USEREVENT + 1, SECOND)
 
     # Create a canvas on which to display everything
-    window_dimensions = (SCREEN_WIDTH, SCREEN_HEIGHT)
+    if DEBUG or not USING_KEYBOARD_BUTTONS:
+        screen_height = SCREEN_HEIGHT_L
+    else:
+        screen_height = SCREEN_HEIGHT_S
+    window_dimensions = (SCREEN_WIDTH, screen_height)
     screen = pygame.display.set_mode(window_dimensions, 0, 32)
     pygame.display.set_caption('Tamajouki')
 
@@ -194,6 +198,7 @@ def main():
     sleeping = False
     update_game = False
     using_weapon = False
+    evolving = False
     dead = False
     game_over = False
 
@@ -204,7 +209,8 @@ def main():
 
     # Game loop
     while True:
-        serial_string = update_serial_string(serial_port)
+        if USING_KEYBOARD_BUTTONS:
+            serial_string = update_serial_string(serial_port)
 
         screen.fill(BG_COLOR)
         mousex = 0
@@ -225,16 +231,18 @@ def main():
             button = get_keyboard_button(serial_string)
         else:
             button = get_button_at_pixel(mousex, mousey)
-        if button == 0:     # move left
+
+        # move left
+        if button == 0:
             if stats:
                 statid -= 1
-                if statid <= -1:
+                if statid < 0:
                     statid = 4
             else:
                 sel_colid -= 1
-                if (sel_colid <= -1) or (sel_rowid > 0 and sel_colid < 4):  # jump to end
+                if (sel_colid < 0) or (sel_rowid > 0 and sel_colid < 4):  # jump to end
                     if sel_rowid == 0:
-                        if 0 < stage < 9:
+                        if evolving:
                             sel_colid = 6
                             sel_rowid = stage - 1
                         else:
@@ -242,36 +250,38 @@ def main():
                     else:
                         sel_colid = 6
                         sel_rowid = sel_rowid - 1
-        elif button == 1 and not dead:  # enter/exit
+        # enter/exit
+        elif button == 1 and not dead:
             if sel_colid == 2:          # stats
                 stats = not stats
             elif stage == 0:            # non-stats options, egg stage
                 current_img = egg_bounce_img
             else:                       # non-stats options
-                if sel_colid == 0 and (pet['hunger'] >= HUNGER_CANEAT or game_over):    # eat
+                if sel_colid == 0 and (pet['hunger'] >= HUNGER_CANEAT or game_over):        # eat
                     eating = True
                     overlay_img = overlay_eat
                     has_overlay = True
-                elif sel_colid == 1 and (pet['waste'] >= WASTE_CANCLEAN or game_over):  # clean
+                elif sel_colid == 1 and (pet['waste'] >= WASTE_CANCLEAN or game_over):      # clean
                     cleaning = True
                     overlay_img = overlay_clean
                     has_overlay = True
-                elif sel_colid == 3 and (pet['energy'] <= ENERGY_CANSLEEP):             # sleep
+                elif sel_colid == 3 and (pet['energy'] <= ENERGY_CANSLEEP or game_over):    # sleep
                     current_img, overlay_img, sleeping, has_overlay = trigger_sleep(stage)
-                elif 4 <= sel_colid <= 6 and not game_over:                             # use weapon
+                elif 4 <= sel_colid <= 6:                                                   # use weapon
                     overlay_img, underlay_img, using_weapon, has_overlay, has_underlay =\
                         trigger_weapon(sel_colid, sel_rowid, pet)
                     if overlay_img == overlay_bomb:
                         screen.fill(BOMB_FILL_COLOR)
                         pygame.time.set_timer(USEREVENT + 1, SECOND)
                 has_overlay2 = False
-        elif button == 2:   # move right
+        # move right
+        elif button == 2:
             if stats:
                 statid += 1
                 statid %= 5
             else:
                 sel_colid += 1
-                if 0 < stage < 9:
+                if evolving:
                     sel_colid %= 7
                     if sel_colid == 0:
                         sel_rowid += 1
@@ -288,10 +298,9 @@ def main():
                 current_img = pet_images[stage]
             if stage == 0 and pet['age'] > AGE_HATCH:
                 stage += 1
+                evolving = True
                 current_img = pet_images[stage]
-                has_overlay = False
-                has_overlay2 = False
-                has_underlay = False
+                has_overlay = has_overlay2 = has_underlay = False
             elif stage == 1 and pet['age'] > AGE_MATURE:
                 stage += 1
                 current_img = pet_images[stage]
@@ -300,56 +309,40 @@ def main():
                     stage += 1
                     current_img = pet_images[stage]
             elif stage == 9:
+                evolving = False
+                game_over = True
                 if sel_colid > 3:
                     sel_colid = 0
                     sel_rowid = 0
-                has_overlay = False
-                has_overlay2 = False
-                has_underlay = False
-                game_over = True
+                has_overlay = has_overlay2 = has_underlay = False
+                current_img = pet_images[stage]
                 pet['hunger'] = 0
                 pet['energy'] = 256
                 pet['waste'] = 0
                 pet['happiness'] = 256
             if pet['age'] >= AGE_DEATHFROMNATURALCAUSES:
-                current_img = dead_img
-                has_overlay = False
-                has_overlay2 = False
-                has_underlay = False
+                evolving = False
                 dead = True
+                current_img = dead_img
+                has_overlay = has_overlay2 = has_underlay = False
 
             # using options - care / weapons
             if eating:
                 if care_timer >= CARE_TIME:
                     care_timer = 0
                     eating = False
-                    has_overlay = False
-                    has_overlay2 = False
-                    has_underlay = False
+                    has_overlay = has_overlay2 = has_underlay = False
                     pet['hunger'] = 0
                     pet['power'] += FOOD_BONUS
                 else:
                     care_timer += 1
-            if using_weapon:
-                if weapon_timer >= WEAPON_TIME:
-                    weapon_timer = 0
-                    using_weapon = False
-                    has_overlay = False
-                    has_overlay2 = False
-                    has_underlay = False
-                    if pet['hunger'] < 5 and pet['energy'] >= 256 and pet['waste'] < 5:     # power-up combo
-                        pet['power'] += WEAPON_BONUS
-                else:
-                    weapon_timer += 1
             if sleeping:
                 if care_timer >= CARE_TIME:
                     care_timer = 0
                     pet['energy'] += 8
                     if pet['energy'] >= 256:
                         sleeping = False
-                        has_overlay = False
-                        has_overlay2 = False
-                        has_underlay = False
+                        has_overlay = has_overlay2 = has_underlay = False
                         current_img = pet_images[stage]
                 else:
                     care_timer += 1
@@ -357,27 +350,27 @@ def main():
                 if care_timer >= CARE_TIME:
                     care_timer = 0
                     cleaning = False
-                    has_overlay = False
-                    has_overlay2 = False
-                    has_underlay = False
+                    has_overlay = has_overlay2 = has_underlay = False
                     pet['waste'] = 0
                     pet['power'] += 5
                     pygame.time.set_timer(USEREVENT + 1, SECOND)
                 else:
                     care_timer += 1
+            if using_weapon:
+                if weapon_timer >= WEAPON_TIME:
+                    weapon_timer = 0
+                    using_weapon = False
+                    has_overlay = has_overlay2 = has_underlay = False
+                    if pet['hunger'] < 5 and pet['energy'] >= 256 and pet['waste'] < 5:     # power-up combo
+                        pet['power'] += WEAPON_BONUS
+                else:
+                    weapon_timer += 1
             else:
                 # routine points add/reduce
                 if not sleeping and not dead:
                     do_cycle(pet, game_over)
 
-                # pass out
-                if pet['energy'] < ENERGY_PASSOUT:
-                    if stage > 0:
-                        pet['happiness'] -= 64
-                    current_img, overlay_img, sleeping, has_overlay = trigger_sleep(stage)
-
-            if not sleeping and not cleaning and not eating and not using_weapon\
-                    and not dead and not game_over:
+            if evolving and not sleeping and not cleaning and not eating and not using_weapon:
                 # stink
                 if pet['waste'] >= WASTE_EXPUNGE:
                     overlay_img = overlay_stink
@@ -390,6 +383,10 @@ def main():
                 elif pet['hunger'] >= HUNGER_SICKFROMNOTEATING:
                     overlay_img2 = overlay_starving
                     has_overlay2 = True
+                # pass out
+                if evolving and pet['energy'] < ENERGY_PASSOUT:
+                    pet['happiness'] -= 64
+                    current_img, overlay_img, sleeping, has_overlay = trigger_sleep(stage)
 
             update_game = False
 
@@ -399,16 +396,16 @@ def main():
             y = 0
             for option in option_images:
                 render_option(x, y, option)
-                x += SELECTOR_GAP
+                x += SELECTOR_X_GAP
 
         # Render weapon choices to appear according to stage
-        if 0 < stage < 9 and not dead:
+        if evolving:
             render_weapon(stage)
 
         # Render selector
         if not dead:
             screen.blit(pygame.transform.flip(selector_img, True, False),
-                        (SELECTOR_X + (sel_colid * SELECTOR_GAP), SELECTOR_Y + (sel_rowid * SELECTOR_Y_GAP)))
+                        (SELECTOR_X + (sel_colid * SELECTOR_X_GAP), SELECTOR_Y + (sel_rowid * SELECTOR_Y_GAP)))
 
         # Render display (Create a surface for pet display)
         display = pygame.Surface(DISPLAY_SIZE)
@@ -447,11 +444,12 @@ def main():
             render_display(display, NONPIXEL_COLOR)
 
         # Render debug
-        render_debug(font, pet)
+        if DEBUG:
+            render_debug(font, pet)
 
         # Render buttons
         if not USING_KEYBOARD_BUTTONS:
-            render_buttons(64, 420)
+            render_buttons(BTN_X, BTN_Y)
 
         pygame.display.update()
         clock.tick(FPS)
