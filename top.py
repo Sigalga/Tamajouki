@@ -97,15 +97,12 @@ def trigger_sleep(stage):
 
 def trigger_weapon(sel_colid, sel_rowid, pet):
     using_weapon = True
-    overlay_img = null_img
-    underlay_img = null_img
     wid = (sel_colid - 4) + (3 * sel_rowid)
+    img = weapon_outcomes[wid][IMAGE]
+    overlay_img = img
+    underlay_img = img
     has_overlay = weapon_outcomes[wid][OVERLAY]
-    if has_overlay:
-        overlay_img = weapon_outcomes[wid][IMAGE]
     has_underlay = weapon_outcomes[wid][UNDERLAY]
-    if has_underlay:
-        underlay_img = weapon_outcomes[wid][IMAGE]
     pet[weapon_outcomes[wid][STATS]] += weapon_outcomes[wid][POINTS]
     return overlay_img, underlay_img, using_weapon, has_overlay, has_underlay
 
@@ -145,7 +142,7 @@ def update_serial_string(serial_port):
 
 def init_serial():
     # get the keyboard port
-    serial_port = serial.Serial(port="/dev/ttyUSB0", baudrate=115200, bytesize=8, timeout=2,
+    serial_port = serial.Serial(port=SERIAL_PORT, baudrate=115200, bytesize=8, timeout=2,
                                 stopbits=serial.STOPBITS_ONE)
     serial_string = str("")
     return serial_port, serial_string
@@ -157,7 +154,7 @@ def init_game():
     pygame.time.set_timer(USEREVENT + 1, SECOND)
 
     # Create a canvas on which to display everything
-    if DEBUG or not USING_KEYBOARD_BUTTONS:
+    if __debug__ or not USING_KEYBOARD_BUTTONS:
         screen_height = SCREEN_HEIGHT_L
     else:
         screen_height = SCREEN_HEIGHT_S
@@ -444,7 +441,7 @@ def main():
             render_display(display, NONPIXEL_COLOR)
 
         # Render debug
-        if DEBUG:
+        if __debug__:
             render_debug(font, pet)
 
         # Render buttons
@@ -456,4 +453,7 @@ def main():
 
 
 if __name__ == '__main__':
+    if len(sys.argv) > 2 and sys.argv[1] == "-K":
+        USING_KEYBOARD_BUTTONS = True
+        SERIAL_PORT = sys.argv[2]
     main()
