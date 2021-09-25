@@ -89,7 +89,7 @@ def get_offset():
 
 def trigger_sleep(stage):
     sleeping = True
-    current_img = sleep_pet_images[stage - 1]
+    current_img = sleep_pet_images[stage]
     overlay_img = overlay_sleep
     has_overlay = True
     return current_img, overlay_img, sleeping, has_overlay
@@ -98,13 +98,13 @@ def trigger_sleep(stage):
 def trigger_weapon(sel_colid, sel_rowid, pet):
     using_weapon = True
     wid = (sel_colid - 4) + (3 * sel_rowid)
-    img = weapon_outcomes[wid][IMAGE]
-    overlay_img = img
-    underlay_img = img
+    overlay_img = weapon_outcomes[wid][OL_IMAGE]
+    underlay_img = weapon_outcomes[wid][UL_IMAGE]
+    overlay_img2 = weapon_outcomes[wid][OL_IMAGE2]
     has_overlay = weapon_outcomes[wid][OVERLAY]
     has_underlay = weapon_outcomes[wid][UNDERLAY]
     pet[weapon_outcomes[wid][STATS]] += weapon_outcomes[wid][POINTS]
-    return overlay_img, underlay_img, using_weapon, has_overlay, has_underlay
+    return overlay_img, overlay_img2, underlay_img, using_weapon, has_overlay, has_underlay
 
 
 def get_button_at_pixel(x, y):
@@ -265,8 +265,9 @@ def main():
                 elif sel_colid == 3 and (pet['energy'] <= ENERGY_CANSLEEP or game_over):    # sleep
                     current_img, overlay_img, sleeping, has_overlay = trigger_sleep(stage)
                 elif 4 <= sel_colid <= 6:                                                   # use weapon
-                    overlay_img, underlay_img, using_weapon, has_overlay, has_underlay =\
+                    overlay_img, overlay_img2, underlay_img, using_weapon, has_overlay, has_underlay =\
                         trigger_weapon(sel_colid, sel_rowid, pet)
+                    current_img = sleep_pet_images[stage]
                     if overlay_img == overlay_bomb:
                         screen.fill(BOMB_FILL_COLOR)
                         pygame.time.set_timer(USEREVENT + 1, SECOND)
@@ -356,8 +357,19 @@ def main():
             if using_weapon:
                 if weapon_timer >= WEAPON_TIME:
                     weapon_timer = 0
-                    using_weapon = False
-                    has_overlay = has_overlay2 = has_underlay = False
+                    if overlay_img == overlay_heartbreak:
+                        overlay_img = overlay_heartbreak2
+                        overlay_img2 = overlay_tear
+                        has_overlay2 = True
+                    elif overlay_img == overlay_exist:
+                        overlay_img = overlay_tear
+                    elif overlay_img == overlay_schrod:
+                        overlay_img = overlay_schrod2
+                    else:
+                        weapon_timer = 0
+                        using_weapon = False
+                        has_overlay = has_overlay2 = has_underlay = False
+                        current_img = pet_images[stage]
                     if pet['hunger'] < 5 and pet['energy'] >= 256 and pet['waste'] < 5:     # power-up combo
                         pet['power'] += WEAPON_BONUS
                 else:

@@ -8,7 +8,7 @@ def render_image(file, size):
 
 bg_img =            render_image('graphics/background.png', DISPLAY_SIZE)
 selector_img =      render_image('graphics/selector.png', SELECTOR_SIZE)
-null_img =              render_image('graphics/null_img.png', DISPLAY_SIZE)
+null_img =          render_image('graphics/null_img.png', DISPLAY_SIZE)
 
 # life phases
 egg_img =           render_image('graphics/life_phases/egg.png', DISPLAY_SIZE)
@@ -36,7 +36,7 @@ sleep_ultraevil_img =       render_image('graphics/life_phases/ultraevil_sleep.p
 sleep_zettaevil_img =       render_image('graphics/life_phases/zettaevil_sleep.png', DISPLAY_SIZE)
 sleep_insect_demon_img =    render_image('graphics/life_phases/insect_demon_sleep.png', DISPLAY_SIZE)
 sleep_sewage_devil_img =    render_image('graphics/life_phases/sewage_devil_sleep.png', DISPLAY_SIZE)
-sleep_pet_images = (sleep_baby_img, sleep_adult_img, sleep_evil_img, sleep_superevil_img, sleep_megaevil_img,
+sleep_pet_images = (egg_bounce_img, sleep_baby_img, sleep_adult_img, sleep_evil_img, sleep_superevil_img, sleep_megaevil_img,
                     sleep_ultraevil_img, sleep_zettaevil_img, sleep_insect_demon_img, sleep_sewage_devil_img)
 
 # stats
@@ -96,11 +96,12 @@ exist_img =     render_image('graphics/option_buttons/wo_crisis.png', SELECTOR_S
 heartbrk_img =  render_image('graphics/option_buttons/wo_hrtbrk.png', SELECTOR_SIZE)
 smoke_img =     render_image('graphics/option_buttons/wo_smok.png', SELECTOR_SIZE)
 vaxx_img =      render_image('graphics/option_buttons/wo_vaxx.png', SELECTOR_SIZE)
+schrod_img =      render_image('graphics/option_buttons/wo_schrod.png', SELECTOR_SIZE)
 baby_weapons =          [smash_img,     spray_img,  bleach_img  ]
 adult_weapons =         [freeze_img,    cat_img,    ignite_img  ]
 evil_weapons =          [electr_img,    boil_img,   bomb_img    ]
 superevil_weapons =     [cruc_img,      exist_img,  heartbrk_img]
-megaevil_weapons =      [smoke_img,     vaxx_img,   smash_img   ]
+megaevil_weapons =      [smoke_img,     vaxx_img,   schrod_img  ]
 ultraevil_weapons =     [smash_img,     smash_img,  smash_img   ]
 zettaevil_weapons =     [smash_img,     smash_img,  smash_img   ]
 insect_demon_weapons =  [smash_img,     smash_img,  smash_img   ]
@@ -117,31 +118,41 @@ overlay_ignite =        render_image('graphics/weapon_layers/w_ignite.png', DISP
 underlay_electr_chair = render_image('graphics/weapon_layers/w_electric_chair.png', DISPLAY_SIZE)
 overlay_boil =          render_image('graphics/weapon_layers/w_boil.png', DISPLAY_SIZE)
 overlay_bomb =          render_image('graphics/weapon_layers/w_bomb.png', DISPLAY_SIZE)
-overlay_crucify =       render_image('graphics/weapon_layers/w_cross.png', DISPLAY_SIZE)
-overlay_exist =         render_image('graphics/weapon_layers/w_exist.png', DISPLAY_SIZE)
-overlay_heartbreak =    render_image('graphics/weapon_layers/w_heartbreak.png', DISPLAY_SIZE)
+underlay_crucify =      render_image('graphics/weapon_layers/w_cross.png', DISPLAY_SIZE)
+overlay_exist =         render_image('graphics/weapon_layers/w_exist1.png', DISPLAY_SIZE)
+overlay_tear =          render_image('graphics/weapon_layers/w_tear.png', DISPLAY_SIZE)
+overlay_heartbreak =    render_image('graphics/weapon_layers/w_heartbreak1.png', DISPLAY_SIZE)
+overlay_heartbreak2 =   render_image('graphics/weapon_layers/w_heartbreak2.png', DISPLAY_SIZE)
 overlay_smoking =       render_image('graphics/weapon_layers/w_smoking.png', DISPLAY_SIZE)
-overlay_vaccine =       render_image('graphics/weapon_layers/w_smoking.png', DISPLAY_SIZE)
+overlay_vaccine =       render_image('graphics/weapon_layers/w_vaxx.png', DISPLAY_SIZE)
+overlay_schrod =        render_image('graphics/weapon_layers/w_schrod.png', DISPLAY_SIZE)
+underlay_schrod =       render_image('graphics/weapon_layers/w_schrod_ul.png', DISPLAY_SIZE)
+overlay_schrod2 =        render_image('graphics/weapon_layers/w_schrod2.png', DISPLAY_SIZE)
+
 
 # layer indices
 OVERLAY = 0
 UNDERLAY = 1
-IMAGE = 2
+OL_IMAGE = 2
 STATS = 3
 POINTS = 4
-#                   overlay     underlay    image                   stats       points
-weapon_outcomes = ((True,       False,      overlay_flip_flop,      'energy',   -10),
-                   (True,       False,      overlay_spray,          'hunger',   -5),
-                   (True,       False,      overlay_bleach,         'waste',    -50),
-                   (True,       False,      overlay_freeze,         'energy',   -10),
-                   (True,       False,      overlay_cat,            'power',   10),
-                   (True,       False,      overlay_ignite,         'hunger',   -5),
-                   (False,      True,       underlay_electr_chair,  'energy',   10),
-                   (True,       False,      overlay_boil,           'hunger',   -5),
-                   (True,       False,      overlay_bomb,           'energy',   10),
-                   (False,      True,       overlay_crucify,        'power',    10),
-                   (True,       False,      overlay_exist,          'energy',   10),
-                   (True,       False,      overlay_heartbreak,     'energy',   10),
-                   (True,       False,      overlay_smoking,        'energy',   10),
-                   (True,       False,      overlay_vaccine,        'energy',   10)
+UL_IMAGE = 5
+OL_IMAGE2 = 5
+NEXT_FRAME_IMG = 6
+#                   overlay     underlay    image               stats       points  2nd image
+weapon_outcomes = ((True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
+                   (True,       False,      overlay_spray,      'hunger',   -5,     null_img),
+                   (True,       False,      overlay_bleach,     'waste',    -50,    null_img),
+                   (True,       False,      overlay_freeze,     'energy',   -10,    null_img),
+                   (True,       False,      overlay_cat,        'power',    10,     null_img),
+                   (True,       False,      overlay_ignite,     'hunger',   -5,     null_img),
+                   (False,      True,       null_img,           'energy',   10,     underlay_electr_chair),
+                   (True,       False,      overlay_boil,       'hunger',   -5,     null_img),
+                   (True,       False,      overlay_bomb,       'energy',   10,     null_img),
+                   (False,      True,       null_img,           'power',    10,     underlay_crucify),
+                   (True,       False,      overlay_exist,      'energy',   10,     null_img,   overlay_tear), # anim
+                   (True,       False,      overlay_heartbreak, 'energy',   10,     null_img,   overlay_tear), # anim
+                   (True,       False,      overlay_smoking,    'energy',   10,     null_img),
+                   (True,       False,      overlay_vaccine,    'energy',   10,     null_img),
+                   (True,       True,       overlay_schrod,     'energy',   10,     underlay_schrod,    overlay_schrod2)
                    )
