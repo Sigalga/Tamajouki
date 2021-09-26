@@ -256,7 +256,7 @@ def main():
             else:                       # non-stats options
                 if sel_colid == 0 and (pet['hunger'] >= HUNGER_CANEAT or game_over):        # eat
                     eating = True
-                    overlay_img = overlay_eat
+                    overlay_img = overlay_feed
                     has_overlay = True
                 elif sel_colid == 1 and (pet['waste'] >= WASTE_CANCLEAN or game_over):      # clean
                     cleaning = True
@@ -363,8 +363,8 @@ def main():
                         has_overlay2 = True
                     elif overlay_img == overlay_exist:
                         overlay_img = overlay_tear
-                    elif overlay_img == overlay_schrod:
-                        overlay_img = overlay_schrod2
+                    #elif overlay_img == overlay_schrod:
+                     #   overlay_img = overlay_schrod2
                     else:
                         weapon_timer = 0
                         using_weapon = False
