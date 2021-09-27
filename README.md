@@ -4,7 +4,7 @@
 To run the game in release mode:
 Set the interpreter options to `-O`.
 
-In debug mode the game runs with visible text, describing the stat points.
+In debug mode the game displays a stats board, and quick level up/down buttons.
 
 ------------------------------------------------------------------------------------
 
