@@ -1,10 +1,12 @@
 import pygame
 from params import DISPLAY_SIZE, SELECTOR_SIZE
 
+
 def render_image(file, size):
     image = pygame.image.load(file)
     image = pygame.transform.scale(image, size)
     return image
+
 
 bg_img =            render_image('graphics/background.png', DISPLAY_SIZE)
 selector_img =      render_image('graphics/selector.png', SELECTOR_SIZE)
@@ -134,38 +136,4 @@ overlay_vaccine =       render_image('graphics/weapon_layers/w_vaxx.png', DISPLA
 overlay_burger =           render_image('graphics/weapon_layers/w_burger.png', DISPLAY_SIZE)
 overlay_roll20 =        render_image('graphics/weapon_layers/w_roll20.png', DISPLAY_SIZE)
 
-# layer indices
-OVERLAY = 0
-UNDERLAY = 1
-OL_IMAGE = 2
-STATS = 3
-POINTS = 4
-UL_IMAGE = 5
-OL_IMAGE2 = 5
-NEXT_FRAME_IMG = 6
-#                   overlay     underlay    image               stats       points  2nd image
-weapon_outcomes =   ((True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
-                    (True,       False,      overlay_spray,      'hunger',   -5,     null_img),
-                    (True,       False,      overlay_bleach,     'waste',    -50,    null_img),
-                    (True,       False,      overlay_freeze,     'energy',   -10,    null_img),
-                    (True,       False,      overlay_cat,        'power',    10,     null_img),
-                    (True,       False,      overlay_ignite,     'hunger',   -5,     null_img),
-                    (False,      True,       null_img,           'energy',   10,     underlay_electr_chair),
-                    (True,       False,      overlay_boil,       'hunger',   -5,     null_img),
-                    (True,       False,      overlay_bomb,       'energy',   10,     null_img),
-                    (False,      True,       null_img,           'power',    10,     underlay_crucify),
-                    (True,       False,      overlay_exist,      'energy',   10,     null_img,   overlay_tear), # anim
-                    (True,       False,      overlay_heartbreak, 'energy',   10,     null_img,   overlay_tear), # anim
-                    (True,       False,      overlay_smoking,    'energy',   10,     null_img),
-                    (True,       False,      overlay_vaccine,    'energy',   10,     null_img),
-                    (True,       False,      overlay_burger,     'energy',   10,     null_img),
-                    (True,       False,      overlay_roll20,     'energy',   10,     null_img),
-                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
-                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
-                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
-                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
-                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
-                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
-                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
-                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img)
-                   )
+

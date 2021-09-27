@@ -6,6 +6,7 @@ import platform
 
 from params import *
 from graphics import *
+from weapon_operations import *
 from pygame.locals import *
 import serial
 # from numpy import format_parser
@@ -20,7 +21,7 @@ def render_display(image_surface, color):
     screen.blit(image_surface, (DISPLAY_X, DISPLAY_Y))  # places the display surface in window
 
 
-def render_weapon(stage):
+def render_weapons(stage):
     y = 0
     for weapon_list in all_weapons[0:stage]:    # row
         x = 256
@@ -29,11 +30,17 @@ def render_weapon(stage):
             x += SELECTOR_X_GAP
         y = y + 1
 
+def render_caring():
+    x = 0
+    y = 0
+    for option in option_images:
+        render_option(x, y, option)
+        x += SELECTOR_X_GAP
 
 def render_option(x, y, image):
     feed_option = pygame.Surface(SELECTOR_SIZE)
-    feed_option.fill(OPTION_COLOR)      # this fills the option surface with a color
-    feed_option.blit(image, (0, 0))     # this overlays the option surface with an img
+    feed_option.fill(OPTION_COLOR)      # fills the option surface with a color
+    feed_option.blit(image, (0, 0))     # overlays the option surface with an img
     color = TRANSPARENT_COLOR
     pygame.draw.rect(screen, color, (SELECTOR_X + x, SELECTOR_Y + y, SELECTOR_SIZE[0], SELECTOR_SIZE[1]))
     screen.blit(feed_option, (SELECTOR_X + x, SELECTOR_Y + y))  # places the display surface in window
@@ -46,7 +53,8 @@ def render_buttons(x, y):
         pygame.draw.ellipse(screen, BTN_SHADOW_COLOR, (x + i, y, BTN_BORDER_SIZE, BTN_BORDER_SIZE), 1)
 
 
-def render_debug(font, pet):
+def render_debug(font, pet, stage):
+    # stats board
     surf = font.render('DEBUG --', True, PIXEL_COLOR)
     screen.blit(surf, (360, 360))
     debug = (('HUNGER: %s', 'AGE: %s', 'WASTE: %d', 'ENERGY: %s', 'HAPPINESS: %s', 'POWER: %s'),
@@ -54,6 +62,14 @@ def render_debug(font, pet):
     for pos, y in enumerate(i for i in range(370, 430, 10)):
         surf = font.render(debug[0][pos] % pet[debug[1][pos]], True, PIXEL_COLOR)   # debug stats text
         screen.blit(surf, (360, y))
+    surf = font.render('STAGE: %s' % stage, True, PIXEL_COLOR)
+    screen.blit(surf, (360, 430))
+
+    # stage up/down buttons
+    pygame.draw.polygon(screen, BTN_BORDER_COLOR, ((DBG_BTN_X1, DBG_BTN_UP_Y2), (DBG_BTN_X2, DBG_BTN_UP_Y2),
+                                                   (DBG_BTN_X3, DBG_BTN_UP_Y1)))
+    pygame.draw.polygon(screen, BTN_BORDER_COLOR, ((DBG_BTN_X1, DBG_BTN_DOWN_Y1), (DBG_BTN_X2, DBG_BTN_DOWN_Y1),
+                                                   (DBG_BTN_X3, DBG_BTN_DOWN_Y2)))
 
 
 def do_random_event(pet):
@@ -83,28 +99,12 @@ def do_cycle(pet, is_game_over):
             pet['happiness'] -= 1
 
 
-def get_offset():
-    return random.randint(-3, 2)
-
-
 def trigger_sleep(stage):
     sleeping = True
     current_img = sleep_pet_images[stage]
     overlay_img = overlay_sleep
     has_overlay = True
     return current_img, overlay_img, sleeping, has_overlay
-
-
-def trigger_weapon(sel_colid, sel_rowid, pet):
-    using_weapon = True
-    wid = (sel_colid - 4) + (3 * sel_rowid)
-    overlay_img = weapon_outcomes[wid][OL_IMAGE]
-    underlay_img = weapon_outcomes[wid][UL_IMAGE]
-    overlay_img2 = weapon_outcomes[wid][OL_IMAGE2]
-    has_overlay = weapon_outcomes[wid][OVERLAY]
-    has_underlay = weapon_outcomes[wid][UNDERLAY]
-    pet[weapon_outcomes[wid][STATS]] += weapon_outcomes[wid][POINTS]
-    return overlay_img, overlay_img2, underlay_img, using_weapon, has_overlay, has_underlay
 
 
 def get_button_at_pixel(x, y):
@@ -115,6 +115,11 @@ def get_button_at_pixel(x, y):
                 return button
             else:
                 button += 1
+    if __debug__ and DBG_BTN_X1 < x < DBG_BTN_X2:
+        button = 3
+        if DBG_BTN_DOWN_Y1 < y < DBG_BTN_DOWN_Y2:
+            button = 4
+        return button
     return None
 
 
@@ -149,6 +154,7 @@ def init_serial():
 
 
 def init_game():
+    global screen, clock
     pygame.init()
     clock = pygame.time.Clock()
     pygame.time.set_timer(USEREVENT + 1, SECOND)
@@ -165,14 +171,13 @@ def init_game():
     # init fonts
     font = pygame.font.SysFont('Arial', 14)
     stat_font = pygame.font.SysFont('ani', 45)
-    return clock, screen, font, stat_font
+    return font, stat_font
 
 
 def main():
     if USING_KEYBOARD_BUTTONS:
         serial_port, serial_string = init_serial()
-    global screen, clock
-    clock, screen, font, stat_font = init_game()
+    font, stat_font = init_game()
 
     # Tamajouki
     pet = {'hunger': 0, 'energy': 256, 'waste': 0, 'age': 0, 'happiness': 0, 'power': 0}
@@ -193,18 +198,22 @@ def main():
     eating = False
     stats = False
     sleeping = False
-    update_game = False
     using_weapon = False
-    evolving = False
-    dead = False
-    game_over = False
+    update_game = False
+    evolving = False    # enables routine points cycle and weapon options for a developing pet.
+    dead = False        # removes caring and weapon options, overlays with a grave, keeps final stats.
+    game_over = False   # removes weapon options and the effect of caring options on stats. sets all stats to max.
+
+    # debug
+    dbg_lvlup = False
+    dbg_lvldown = False
 
     # Image overlays
     current_img = egg_img
     overlay_img = null_img
     underlay_img = null_img
 
-    # Game loop
+    # -------------- Game loop -----------------------------------------------------
     while True:
         if USING_KEYBOARD_BUTTONS:
             serial_string = update_serial_string(serial_port)
@@ -223,11 +232,11 @@ def main():
             elif event.type == USEREVENT + 1 and not dead:
                 update_game = True
 
-        # Buttons logic
-        if USING_KEYBOARD_BUTTONS:
-            button = get_keyboard_button(serial_string)
-        else:
+        # Buttons logic -----------------------------------------------------
+        if not USING_KEYBOARD_BUTTONS or __debug__:
             button = get_button_at_pixel(mousex, mousey)
+        else:
+            button = get_keyboard_button(serial_string)
 
         # move left
         if button == 0:
@@ -288,41 +297,56 @@ def main():
                             sel_colid = 4
                 else:
                     sel_colid %= 4
+        # debug stage up/down buttons
+        if __debug__:
+            if button == 3 and stage < 9:
+                dbg_lvlup = True
+                update_game = True
+            elif button == 4 and stage > 0:
+                dbg_lvldown = True
+                update_game = True
 
-        # Game logic
+        # Game logic -----------------------------------------------------
         if update_game:
-            # life phases
-            if current_img == egg_bounce_img:
+            # debug stage up/down
+            if __debug__:
+                if dbg_lvlup:
+                    stage += 1
+                    dbg_lvlup = False
+                    pet['age'] = 0
+                    pet['power'] = 0
+                elif dbg_lvldown:
+                    stage -= 1
+                    dbg_lvldown = False
+                    pet['age'] = 0
+                    pet['power'] = 0
                 current_img = pet_images[stage]
+
+            # life phases
             if stage == 0 and pet['age'] > AGE_HATCH:
                 stage += 1
-                evolving = True
-                current_img = pet_images[stage]
                 has_overlay = has_overlay2 = has_underlay = False
             elif stage == 1 and pet['age'] > AGE_MATURE:
                 stage += 1
-                current_img = pet_images[stage]
             elif 1 < stage < 9:
                 if pet['power'] > evil_powers[stage - 2]:
                     stage += 1
-                    current_img = pet_images[stage]
             elif stage == 9:
-                evolving = False
                 game_over = True
                 if sel_colid > 3:
                     sel_colid = 0
                     sel_rowid = 0
                 has_overlay = has_overlay2 = has_underlay = False
-                current_img = pet_images[stage]
                 pet['hunger'] = 0
                 pet['energy'] = 256
                 pet['waste'] = 0
                 pet['happiness'] = 256
+            current_img = pet_images[stage]
             if pet['age'] >= AGE_DEATHFROMNATURALCAUSES:
-                evolving = False
                 dead = True
                 current_img = dead_img
                 has_overlay = has_overlay2 = has_underlay = False
+            evolving = 0 < stage < 9
 
             # using options - care / weapons
             if eating:
@@ -363,8 +387,6 @@ def main():
                         has_overlay2 = True
                     elif overlay_img == overlay_exist:
                         overlay_img = overlay_tear
-                    #elif overlay_img == overlay_schrod:
-                     #   overlay_img = overlay_schrod2
                     else:
                         weapon_timer = 0
                         using_weapon = False
@@ -399,17 +421,14 @@ def main():
 
             update_game = False
 
+        # Rendering  -----------------------------------------------------
         # Render care options
         if not dead:
-            x = 0
-            y = 0
-            for option in option_images:
-                render_option(x, y, option)
-                x += SELECTOR_X_GAP
+            render_caring()
 
         # Render weapon choices to appear according to stage
         if evolving:
-            render_weapon(stage)
+            render_weapons(stage)
 
         # Render selector
         if not dead:
@@ -419,7 +438,15 @@ def main():
         # Render display (Create a surface for pet display)
         display = pygame.Surface(DISPLAY_SIZE)
 
-        # Stats display logic
+        # Render debug
+        if __debug__:
+            render_debug(font, pet, stage)
+
+        # Render buttons
+        if not USING_KEYBOARD_BUTTONS:
+            render_buttons(BTN_X, BTN_Y)
+
+        # Stats display logic  -----------------------------------------------------
         if stats:
             display.blit(stat_bg_img, (0, 0))
             if statid == 4:     # energy, happiness
@@ -452,13 +479,7 @@ def main():
                 display.blit(overlay_img2, (0, 0))  # overlays display with an image
             render_display(display, NONPIXEL_COLOR)
 
-        # Render debug
-        if __debug__:
-            render_debug(font, pet)
 
-        # Render buttons
-        if not USING_KEYBOARD_BUTTONS:
-            render_buttons(BTN_X, BTN_Y)
 
         pygame.display.update()
         clock.tick(FPS)
