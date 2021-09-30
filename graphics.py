@@ -50,7 +50,7 @@ energy_img =        render_image('graphics/stats/stat_energy.png', DISPLAY_SIZE)
 happiness_img =     render_image('graphics/stats/stat_happy.png', DISPLAY_SIZE)
 stat_images =   (hunger_img, age_img, waste_img, energy_img, happiness_img)
 stat_labels =   ('HUNGER', 'AGE', 'WASTE', 'ENERGY', 'HAPPINESS')
-stat_keys =     ('hunger', 'age', 'waste', 'energy', 'happiness')
+stat_keys =     ('hunger', 'age', 'waste', 'energy', 'happy')
 
 # stat bar
 bar_img =  (render_image('graphics/stats/bar_0.png', DISPLAY_SIZE),
@@ -102,16 +102,6 @@ vaxx_img =      render_image('graphics/option_buttons/wo_vaxx.png', SELECTOR_SIZ
 eat_img =       render_image('graphics/option_buttons/wo_eat.png', SELECTOR_SIZE)
 roll_img =      render_image('graphics/option_buttons/wo_roll20.png', SELECTOR_SIZE)
 
-baby_weapons =          [smash_img,     spray_img,  bleach_img  ]
-adult_weapons =         [freeze_img,    cat_img,    ignite_img  ]
-evil_weapons =          [electr_img,    boil_img,   bomb_img    ]
-superevil_weapons =     [cruc_img,      exist_img,  heartbrk_img]
-megaevil_weapons =      [smoke_img,     vaxx_img,   eat_img     ]
-ultraevil_weapons =     [roll_img,      smash_img,  smash_img   ]
-zettaevil_weapons =     [smash_img,     smash_img,  smash_img   ]
-insect_demon_weapons =  [smash_img,     smash_img,  smash_img   ]
-all_weapons = [baby_weapons, adult_weapons, evil_weapons, superevil_weapons, megaevil_weapons,
-               ultraevil_weapons, zettaevil_weapons, insect_demon_weapons]
 
 # weapon layers
 overlay_flip_flop =     render_image('graphics/weapon_layers/w_flipflop.png', DISPLAY_SIZE)
@@ -130,9 +120,6 @@ overlay_heartbreak =    render_image('graphics/weapon_layers/w_heartbreak1.png',
 overlay_heartbreak2 =   render_image('graphics/weapon_layers/w_heartbreak2.png', DISPLAY_SIZE)
 overlay_smoking =       render_image('graphics/weapon_layers/w_smoking.png', DISPLAY_SIZE)
 overlay_vaccine =       render_image('graphics/weapon_layers/w_vaxx.png', DISPLAY_SIZE)
-#overlay_schrod =        render_image('graphics/weapon_layers/w_schrod.png', DISPLAY_SIZE)
-#underlay_schrod =       render_image('graphics/weapon_layers/w_schrod_ul.png', DISPLAY_SIZE)
-#overlay_schrod2 =       render_image('graphics/weapon_layers/w_schrod2.png', DISPLAY_SIZE)
 overlay_burger =           render_image('graphics/weapon_layers/w_burger.png', DISPLAY_SIZE)
 overlay_roll20 =        render_image('graphics/weapon_layers/w_roll20.png', DISPLAY_SIZE)
 

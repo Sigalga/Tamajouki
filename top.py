@@ -5,6 +5,7 @@ import os
 import platform
 
 from params import *
+import queue
 from graphics import *
 from weapon_operations import *
 from pygame.locals import *
@@ -30,12 +31,14 @@ def render_weapons(stage):
             x += SELECTOR_X_GAP
         y = y + 1
 
+
 def render_caring():
     x = 0
     y = 0
     for option in option_images:
         render_option(x, y, option)
         x += SELECTOR_X_GAP
+
 
 def render_option(x, y, image):
     feed_option = pygame.Surface(SELECTOR_SIZE)
@@ -58,7 +61,7 @@ def render_debug(font, pet, stage):
     surf = font.render('DEBUG --', True, PIXEL_COLOR)
     screen.blit(surf, (360, 360))
     debug = (('HUNGER: %s', 'AGE: %s', 'WASTE: %d', 'ENERGY: %s', 'HAPPINESS: %s', 'POWER: %s'),
-             ('hunger', 'age', 'waste', 'energy', 'happiness', 'power'))
+             ('hunger', 'age', 'waste', 'energy', 'happy', 'power'))
     for pos, y in enumerate(i for i in range(370, 430, 10)):
         surf = font.render(debug[0][pos] % pet[debug[1][pos]], True, PIXEL_COLOR)   # debug stats text
         screen.blit(surf, (360, y))
@@ -83,9 +86,9 @@ def do_random_event(pet):
     elif num == 20:
         pet['waste'] += 1
     elif num == 7:
-        pet['happiness'] += 1
+        pet['happy'] += 1
     elif num == 4:
-        pet['happiness'] -= 1
+        pet['happy'] -= 1
 
 
 def do_cycle(pet, is_game_over):
@@ -95,8 +98,8 @@ def do_cycle(pet, is_game_over):
         pet['hunger'] += 1
         pet['waste'] += 1
         pet['energy'] -= 1
-        if pet['waste'] >= WASTE_EXPUNGE:
-            pet['happiness'] -= 1
+        if pet['waste'] >= WASTE_DIRTY:
+            pet['happy'] -= 1
 
 
 def trigger_sleep(stage):
@@ -106,6 +109,12 @@ def trigger_sleep(stage):
     has_overlay = True
     return current_img, overlay_img, sleeping, has_overlay
 
+
+def trigger_death():
+    dead = True
+    current_img = dead_img
+    has_overlay = has_overlay2 = has_underlay = False
+    return dead, current_img, has_overlay, has_overlay2, has_underlay
 
 def get_button_at_pixel(x, y):
     if BTN_Y < y < BTN_Y + BTN_BORDER_SIZE:
@@ -180,7 +189,7 @@ def main():
     font, stat_font = init_game()
 
     # Tamajouki
-    pet = {'hunger': 0, 'energy': 256, 'waste': 0, 'age': 0, 'happiness': 0, 'power': 0}
+    pet = {'hunger': 0, 'energy': 256, 'waste': 0, 'age': 0, 'happy': 0, 'power': 0}
 
     # Counters
     sel_colid = 0
@@ -212,6 +221,9 @@ def main():
     current_img = egg_img
     overlay_img = null_img
     underlay_img = null_img
+
+    weapons_used = queue.Queue(2)
+    weapons_used.put(-1)
 
     # -------------- Game loop -----------------------------------------------------
     while True:
@@ -273,9 +285,10 @@ def main():
                     has_overlay = True
                 elif sel_colid == 3 and (pet['energy'] <= ENERGY_CANSLEEP or game_over):    # sleep
                     current_img, overlay_img, sleeping, has_overlay = trigger_sleep(stage)
-                elif 4 <= sel_colid <= 6:                                                   # use weapon
-                    overlay_img, overlay_img2, underlay_img, using_weapon, has_overlay, has_underlay =\
+                elif 4 <= sel_colid <= 6 and not using_weapon:                              # use weapon
+                    overlay_img, overlay_img2, underlay_img, using_weapon, has_overlay, has_underlay, wid =\
                         trigger_weapon(sel_colid, sel_rowid, pet)
+                    weapons_used.put(wid)
                     current_img = sleep_pet_images[stage]
                     if overlay_img == overlay_bomb:
                         screen.fill(BOMB_FILL_COLOR)
@@ -329,7 +342,8 @@ def main():
             elif stage == 1 and pet['age'] > AGE_MATURE:
                 stage += 1
             elif 1 < stage < 9:
-                if pet['power'] > evil_powers[stage - 2]:
+                if pet['power'] > evil_powers[stage - 2] and\
+                        pet['waste'] <= WASTE_CANCLEAN and pet['hunger'] <= HUNGER_NEEDSTOEAT:  # level-up combo
                     stage += 1
             elif stage == 9:
                 game_over = True
@@ -338,14 +352,12 @@ def main():
                     sel_rowid = 0
                 has_overlay = has_overlay2 = has_underlay = False
                 pet['hunger'] = 0
-                pet['energy'] = 256
+                pet['energy'] = ENERGY_FULL
                 pet['waste'] = 0
-                pet['happiness'] = 256
+                pet['happy'] = BLISSFUL
             current_img = pet_images[stage]
             if pet['age'] >= AGE_DEATHFROMNATURALCAUSES:
-                dead = True
-                current_img = dead_img
-                has_overlay = has_overlay2 = has_underlay = False
+                dead, current_img, has_overlay, has_overlay2, has_underlay = trigger_death()
             evolving = 0 < stage < 9
 
             # using options - care / weapons
@@ -353,34 +365,34 @@ def main():
                 if care_timer >= CARE_TIME:
                     care_timer = 0
                     eating = False
-                    has_overlay = has_overlay2 = has_underlay = False
                     pet['hunger'] = 0
-                    pet['power'] += FOOD_BONUS
+                    pet['power'] += 1
+                    has_overlay = has_overlay2 = has_underlay = False
                 else:
                     care_timer += 1
             if sleeping:
                 if care_timer >= CARE_TIME:
                     care_timer = 0
-                    pet['energy'] += 8
-                    if pet['energy'] >= 256:
-                        sleeping = False
-                        has_overlay = has_overlay2 = has_underlay = False
-                        current_img = pet_images[stage]
+                    sleeping = False
+                    pet['energy'] = ENERGY_FULL
+                    pet['power'] += 1
+                    has_overlay = has_overlay2 = has_underlay = False
+                    current_img = pet_images[stage]
                 else:
                     care_timer += 1
             if cleaning:
                 if care_timer >= CARE_TIME:
                     care_timer = 0
                     cleaning = False
-                    has_overlay = has_overlay2 = has_underlay = False
                     pet['waste'] = 0
-                    pet['power'] += 5
-                    pygame.time.set_timer(USEREVENT + 1, SECOND)
+                    pet['power'] += 1
+                    has_overlay = has_overlay2 = has_underlay = False
                 else:
                     care_timer += 1
             if using_weapon:
                 if weapon_timer >= WEAPON_TIME:
                     weapon_timer = 0
+
                     if overlay_img == overlay_heartbreak:
                         overlay_img = overlay_heartbreak2
                         overlay_img2 = overlay_tear
@@ -388,22 +400,32 @@ def main():
                     elif overlay_img == overlay_exist:
                         overlay_img = overlay_tear
                     else:
+                        current_img = pet_images[stage]
+                        # death combo 1 ----
+                        last_wid = weapons_used.get()
+                        if last_wid == 1 and pet['energy'] >= ENERGY_CANSLEEP and pet['waste'] >= WASTE_DIRTY:  # K300
+                            curr_wid = weapons_used.get()
+                            if curr_wid == 5:  # ignite
+                                dead, current_img, has_overlay, has_overlay2, has_underlay = trigger_death()
+                            else:
+                                weapons_used.put(curr_wid)
+                        # ------------------
                         weapon_timer = 0
                         using_weapon = False
                         has_overlay = has_overlay2 = has_underlay = False
-                        current_img = pet_images[stage]
-                    if pet['hunger'] < 5 and pet['energy'] >= 256 and pet['waste'] < 5:     # power-up combo
-                        pet['power'] += WEAPON_BONUS
+
+
                 else:
                     weapon_timer += 1
+                pet['power'] += 1
             else:
                 # routine points add/reduce
                 if not sleeping and not dead:
                     do_cycle(pet, game_over)
 
-            if evolving and not sleeping and not cleaning and not eating and not using_weapon:
+            if evolving and not sleeping and not cleaning and not eating and not using_weapon and not dead:
                 # stink
-                if pet['waste'] >= WASTE_EXPUNGE:
+                if pet['waste'] >= WASTE_DIRTY:
                     overlay_img = overlay_stink
                     has_overlay = True
                 # hungry
@@ -416,7 +438,6 @@ def main():
                     has_overlay2 = True
                 # pass out
                 if evolving and pet['energy'] < ENERGY_PASSOUT:
-                    pet['happiness'] -= 64
                     current_img, overlay_img, sleeping, has_overlay = trigger_sleep(stage)
 
             update_game = False
@@ -427,7 +448,7 @@ def main():
             render_caring()
 
         # Render weapon choices to appear according to stage
-        if evolving:
+        if evolving and not dead:
             render_weapons(stage)
 
         # Render selector
@@ -444,6 +465,8 @@ def main():
 
         # Render buttons
         if not USING_KEYBOARD_BUTTONS:
+
+
             render_buttons(BTN_X, BTN_Y)
 
         # Stats display logic  -----------------------------------------------------
