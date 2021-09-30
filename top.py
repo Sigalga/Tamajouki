@@ -5,11 +5,11 @@ import os
 import platform
 
 from params import *
-import queue
-from graphics import *
 from weapon_operations import *
 from pygame.locals import *
 import serial
+import queue
+import random
 # from numpy import format_parser
 # from pygame.surface import Surface, SurfaceType
 
@@ -113,8 +113,8 @@ def trigger_sleep(stage):
 def trigger_death():
     dead = True
     current_img = dead_img
-    has_overlay = has_overlay2 = has_underlay = False
-    return dead, current_img, has_overlay, has_overlay2, has_underlay
+    has_overlay = has_overlay2 = has_underlay = has_dice = False
+    return dead, current_img, has_overlay, has_overlay2, has_underlay, has_dice
 
 def get_button_at_pixel(x, y):
     if BTN_Y < y < BTN_Y + BTN_BORDER_SIZE:
@@ -224,6 +224,8 @@ def main():
 
     weapons_used = queue.Queue(2)
     weapons_used.put(-1)
+    has_dice = False
+    dice_result = -1
 
     # -------------- Game loop -----------------------------------------------------
     while True:
@@ -294,6 +296,7 @@ def main():
                         screen.fill(BOMB_FILL_COLOR)
                         pygame.time.set_timer(USEREVENT + 1, SECOND)
                 has_overlay2 = False
+                has_dice = False
         # move right
         elif button == 2:
             if stats:
@@ -338,7 +341,7 @@ def main():
             # life phases
             if stage == 0 and pet['age'] > AGE_HATCH:
                 stage += 1
-                has_overlay = has_overlay2 = has_underlay = False
+                has_overlay = has_overlay2 = has_underlay = has_dice = False
             elif stage == 1 and pet['age'] > AGE_MATURE:
                 stage += 1
             elif 1 < stage < 9:
@@ -350,14 +353,14 @@ def main():
                 if sel_colid > 3:
                     sel_colid = 0
                     sel_rowid = 0
-                has_overlay = has_overlay2 = has_underlay = False
+                has_overlay = has_overlay2 = has_underlay = has_dice = False
                 pet['hunger'] = 0
                 pet['energy'] = ENERGY_FULL
                 pet['waste'] = 0
                 pet['happy'] = BLISSFUL
             current_img = pet_images[stage]
             if pet['age'] >= AGE_DEATHFROMNATURALCAUSES:
-                dead, current_img, has_overlay, has_overlay2, has_underlay = trigger_death()
+                dead, current_img, has_overlay, has_overlay2, has_underlay, has_dice = trigger_death()
             evolving = 0 < stage < 9
 
             # using options - care / weapons
@@ -367,7 +370,15 @@ def main():
                     eating = False
                     pet['hunger'] = 0
                     pet['power'] += 1
-                    has_overlay = has_overlay2 = has_underlay = False
+                    has_overlay = has_overlay2 = has_underlay = has_dice = False
+                    # death combo 3 ----
+                    curr_wid = weapons_used.get()
+                    if curr_wid == HRTBRK:
+                        dead, current_img, has_overlay, has_overlay2, has_underlay, has_dice = trigger_death()
+                    else:
+                        weapons_used.put(curr_wid)
+                    # ------------------
+
                 else:
                     care_timer += 1
             if sleeping:
@@ -376,7 +387,7 @@ def main():
                     sleeping = False
                     pet['energy'] = ENERGY_FULL
                     pet['power'] += 1
-                    has_overlay = has_overlay2 = has_underlay = False
+                    has_overlay = has_overlay2 = has_underlay = has_dice = False
                     current_img = pet_images[stage]
                 else:
                     care_timer += 1
@@ -386,13 +397,17 @@ def main():
                     cleaning = False
                     pet['waste'] = 0
                     pet['power'] += 1
-                    has_overlay = has_overlay2 = has_underlay = False
+                    has_overlay = has_overlay2 = has_underlay = has_dice = False
                 else:
                     care_timer += 1
             if using_weapon:
+                if overlay_img == overlay_roll20:
+                    has_dice = True
+                    if dice_result == -1:
+                        dice_result = random.randint(1, 20)
                 if weapon_timer >= WEAPON_TIME:
                     weapon_timer = 0
-
+                    dice_result = -1
                     if overlay_img == overlay_heartbreak:
                         overlay_img = overlay_heartbreak2
                         overlay_img2 = overlay_tear
@@ -401,20 +416,26 @@ def main():
                         overlay_img = overlay_tear
                     else:
                         current_img = pet_images[stage]
-                        # death combo 1 ----
                         last_wid = weapons_used.get()
-                        if last_wid == 1 and pet['energy'] >= ENERGY_CANSLEEP and pet['waste'] >= WASTE_DIRTY:  # K300
+                        # death combo 1 ----
+                        if last_wid == SPRAY and pet['energy'] >= ENERGY_CANSLEEP and pet['waste'] >= WASTE_DIRTY:
                             curr_wid = weapons_used.get()
-                            if curr_wid == 5:  # ignite
-                                dead, current_img, has_overlay, has_overlay2, has_underlay = trigger_death()
+                            if curr_wid == IGNITE:
+                                dead, current_img, has_overlay, has_overlay2, has_underlay, has_dice = trigger_death()
+                            else:
+                                weapons_used.put(curr_wid)
+                        # death combo 2 ----
+                        elif last_wid == (BOIL or SMOKE) \
+                                and pet['hunger'] <= HUNGER_NEEDSTOEAT and pet['waste'] <= WASTE_DIRTY:
+                            curr_wid = weapons_used.get()
+                            if curr_wid == BURGER:
+                                dead, current_img, has_overlay, has_overlay2, has_underlay, has_dice = trigger_death()
                             else:
                                 weapons_used.put(curr_wid)
                         # ------------------
                         weapon_timer = 0
                         using_weapon = False
-                        has_overlay = has_overlay2 = has_underlay = False
-
-
+                        has_overlay = has_overlay2 = has_underlay = has_dice = False
                 else:
                     weapon_timer += 1
                 pet['power'] += 1
@@ -465,8 +486,6 @@ def main():
 
         # Render buttons
         if not USING_KEYBOARD_BUTTONS:
-
-
             render_buttons(BTN_X, BTN_Y)
 
         # Stats display logic  -----------------------------------------------------
@@ -500,10 +519,12 @@ def main():
                 display.blit(overlay_img, (0, 0))   # overlays display with an image
             if has_overlay2:
                 display.blit(overlay_img2, (0, 0))  # overlays display with an image
+            if has_dice:
+                text = "{}".format(dice_result)
+                d20 = stat_font.render(text, True, PIXEL_COLOR)
+                text_rect = d20.get_rect(center=(DISPLAY_WIDTH / 2 - 55, DISPLAY_WIDTH / 2 + 45))
+                display.blit(d20, text_rect)
             render_display(display, NONPIXEL_COLOR)
-
-
-
         pygame.display.update()
         clock.tick(FPS)
 
@@ -513,3 +534,5 @@ if __name__ == '__main__':
         USING_KEYBOARD_BUTTONS = True
         SERIAL_PORT = sys.argv[2]
     main()
+
+

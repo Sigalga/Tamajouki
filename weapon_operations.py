@@ -35,7 +35,13 @@ weapon_outcomes = ((True,       False,      overlay_flip_flop,  'energy',   -5, 
                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img)
                    )
-
+# special weapons indices
+SPRAY = 1
+IGNITE = 5
+BOIL = 7
+SMOKE = 11
+BURGER = 13
+HRTBRK = 8
 
 baby_weapons =          [smash_img,     spray_img,  bleach_img  ]
 adult_weapons =         [freeze_img,    cat_img,    ignite_img  ]
