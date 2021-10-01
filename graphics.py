@@ -102,6 +102,7 @@ vaxx_img =      render_image('graphics/option_buttons/wo_vaxx.png', SELECTOR_SIZ
 eat_img =       render_image('graphics/option_buttons/wo_eat.png', SELECTOR_SIZE)
 roll_img =      render_image('graphics/option_buttons/wo_rolld20.png', SELECTOR_SIZE)
 swrd_img =      render_image('graphics/option_buttons/wo_sword.png', SELECTOR_SIZE)
+asasin_img =    render_image('graphics/option_buttons/wo_assassin.png', SELECTOR_SIZE)
 
 # weapon layers
 overlay_flip_flop =     render_image('graphics/weapon_layers/w_flipflop.png', DISPLAY_SIZE)
@@ -123,4 +124,8 @@ overlay_vaccine =       render_image('graphics/weapon_layers/w_vaxx.png', DISPLA
 overlay_burger =        render_image('graphics/weapon_layers/w_burger.png', DISPLAY_SIZE)
 overlay_roll20 =        render_image('graphics/weapon_layers/w_roll20.png', DISPLAY_SIZE)
 overlay_sword =         render_image('graphics/weapon_layers/w_sword.png', DISPLAY_SIZE)
+overlay_assassin =      render_image('graphics/weapon_layers/w_assassin_ol.png', DISPLAY_SIZE)
+underlay_assassin =     render_image('graphics/weapon_layers/w_assassin_ul.png', DISPLAY_SIZE)
 
+# game over overlay
+overlay_game_over = render_image('graphics/game_over.png', DISPLAY_SIZE)

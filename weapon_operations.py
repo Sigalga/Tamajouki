@@ -29,7 +29,7 @@ weapon_outcomes = ((True,       False,      overlay_flip_flop,  'energy',   -5, 
                    (True,       False,      overlay_bomb,       'energy',   20,     null_img),
                    (True,       False,      overlay_roll20,     'energy',    0,     null_img),
                    (True,       False,      overlay_sword,      'energy',   -5,     null_img),
-                   (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
+                   (True,       True,       overlay_assassin,   'energy',   -10,     underlay_assassin),
                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
                    (True,       False,      overlay_flip_flop,  'energy',   -10,    null_img),
@@ -53,7 +53,7 @@ adult_weapons =         [freeze_img,    cat_img,    ignite_img  ]
 evil_weapons =          [electr_img,    boil_img,   heartbrk_img]
 superevil_weapons =     [vaxx_img,      exist_img,  smoke_img   ]
 megaevil_weapons =      [cruc_img,      eat_img,    bomb_img    ]
-ultraevil_weapons =     [roll_img,      swrd_img,   smash_img   ]
+ultraevil_weapons =     [roll_img,      swrd_img,   asasin_img  ]
 zettaevil_weapons =     [smash_img,     smash_img,  smash_img   ]
 insect_demon_weapons =  [smash_img,     smash_img,  smash_img   ]
 all_weapons = [baby_weapons, adult_weapons, evil_weapons, superevil_weapons, megaevil_weapons,

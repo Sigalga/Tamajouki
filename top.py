@@ -4,6 +4,8 @@ import sys
 import os
 import platform
 
+import pygame
+
 from params import *
 from weapon_operations import *
 from pygame.locals import *
@@ -176,7 +178,7 @@ def init_game():
     else:
         screen_height = SCREEN_HEIGHT_S
     window_dimensions = (SCREEN_WIDTH, screen_height)
-    screen = pygame.display.set_mode(window_dimensions, 0, 32)
+    screen = pygame.display.set_mode(window_dimensions, 0, 32) #pygame.FULLSCREEN if using small screen
     pygame.display.set_caption('Tamajouki')
 
     # init fonts
@@ -228,6 +230,7 @@ def main():
     weapons_used.put(-1)
     has_dice = False
     dice_result = -1
+    game_over_blink = 0
 
     # -------------- Game loop -----------------------------------------------------
     while True:
@@ -362,6 +365,13 @@ def main():
                 pet['energy'] = ENERGY_FULL
                 pet['waste'] = 0
                 pet['happy'] = BLISSFUL
+                overlay_img = overlay_game_over
+                if game_over_blink == 0:
+                    has_overlay = True
+                    game_over_blink += 1
+                else:
+                    has_overlay = False
+                    game_over_blink = 0
             current_img = pet_images[stage]
             if pet['age'] >= AGE_DEATHFROMNATURALCAUSES:
                 dead, current_img, has_overlay, has_overlay2, has_underlay, has_dice = trigger_death()
@@ -435,8 +445,13 @@ def main():
                         # death combo 4 ----
                         elif last_wid == DICE and dice_result > 17:
                             curr_wid = weapons_used.get()
-                            print("wid: ", curr_wid)
                             if curr_wid == SMASH or curr_wid == SWORD:
+                                dead, current_img, has_overlay, has_overlay2, has_underlay, has_dice = trigger_death()
+                            else:
+                                weapons_used.put(curr_wid)
+                        elif last_wid == SMASH or last_wid == SWORD:
+                            curr_wid = weapons_used.get()
+                            if curr_wid == DICE and dice_result > 17:
                                 dead, current_img, has_overlay, has_overlay2, has_underlay, has_dice = trigger_death()
                             else:
                                 weapons_used.put(curr_wid)
