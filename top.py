@@ -92,12 +92,12 @@ def do_random_event(pet):
 
 
 def do_cycle(pet, is_game_over):
-    pet['age'] += 2
+    pet['age'] += 1
     if not is_game_over:
         do_random_event(pet)
-        pet['hunger'] += 1
-        pet['waste'] += 1
-        pet['energy'] -= 1
+        pet['hunger'] += 7
+        pet['waste'] += 5
+        pet['energy'] -= 4
         if pet['waste'] >= WASTE_DIRTY:
             pet['happy'] -= 1
 
@@ -115,6 +115,7 @@ def trigger_death():
     current_img = dead_img
     has_overlay = has_overlay2 = has_underlay = has_dice = False
     return dead, current_img, has_overlay, has_overlay2, has_underlay, has_dice
+
 
 def get_button_at_pixel(x, y):
     if BTN_Y < y < BTN_Y + BTN_BORDER_SIZE:
@@ -156,6 +157,7 @@ def update_serial_string(serial_port):
 
 def init_serial():
     # get the keyboard port
+   # usb_port = list(serial.tools.list_ports.grep("USB VID:PID=1A86:7523 LOCATION=1-1"))[0].device
     serial_port = serial.Serial(port=SERIAL_PORT, baudrate=115200, bytesize=8, timeout=2,
                                 stopbits=serial.STOPBITS_ONE)
     serial_string = str("")
@@ -288,8 +290,8 @@ def main():
                 elif sel_colid == 3 and (pet['energy'] <= ENERGY_CANSLEEP or game_over):    # sleep
                     current_img, overlay_img, sleeping, has_overlay = trigger_sleep(stage)
                 elif 4 <= sel_colid <= 6 and not using_weapon:                              # use weapon
-                    overlay_img, overlay_img2, underlay_img, using_weapon, has_overlay, has_underlay, wid =\
-                        trigger_weapon(sel_colid, sel_rowid, pet)
+                    overlay_img, overlay_img2, underlay_img, using_weapon, has_overlay, has_underlay, wid, dice_result =\
+                        trigger_weapon(sel_colid, sel_rowid, pet, dice_result)
                     weapons_used.put(wid)
                     current_img = sleep_pet_images[stage]
                     if overlay_img == overlay_bomb:
@@ -330,12 +332,14 @@ def main():
                     stage += 1
                     dbg_lvlup = False
                     pet['age'] = 0
-                    pet['power'] = 0
+                    if 2 < stage:
+                        pet['power'] = evil_powers[stage - 3]
                 elif dbg_lvldown:
                     stage -= 1
                     dbg_lvldown = False
                     pet['age'] = 0
-                    pet['power'] = 0
+                    if 2 < stage:
+                        pet['power'] = evil_powers[stage - 3]
                 current_img = pet_images[stage]
 
             # life phases
@@ -346,7 +350,7 @@ def main():
                 stage += 1
             elif 1 < stage < 9:
                 if pet['power'] > evil_powers[stage - 2] and\
-                        pet['waste'] <= WASTE_CANCLEAN and pet['hunger'] <= HUNGER_NEEDSTOEAT:  # level-up combo
+                        pet['waste'] <= WASTE_DIRTY and pet['hunger'] <= HUNGER_SICKFROMNOTEATING:  # level-up combo
                     stage += 1
             elif stage == 9:
                 game_over = True
@@ -369,7 +373,7 @@ def main():
                     care_timer = 0
                     eating = False
                     pet['hunger'] = 0
-                    pet['power'] += 1
+                    pet['power'] += CARE_POWER_BONUS
                     has_overlay = has_overlay2 = has_underlay = has_dice = False
                     # death combo 3 ----
                     curr_wid = weapons_used.get()
@@ -378,15 +382,14 @@ def main():
                     else:
                         weapons_used.put(curr_wid)
                     # ------------------
-
                 else:
                     care_timer += 1
             if sleeping:
-                if care_timer >= CARE_TIME:
+                if care_timer >= SLEEP_TIME:
                     care_timer = 0
                     sleeping = False
                     pet['energy'] = ENERGY_FULL
-                    pet['power'] += 1
+                    pet['power'] += CARE_POWER_BONUS
                     has_overlay = has_overlay2 = has_underlay = has_dice = False
                     current_img = pet_images[stage]
                 else:
@@ -396,18 +399,15 @@ def main():
                     care_timer = 0
                     cleaning = False
                     pet['waste'] = 0
-                    pet['power'] += 1
+                    pet['power'] += CARE_POWER_BONUS
                     has_overlay = has_overlay2 = has_underlay = has_dice = False
                 else:
                     care_timer += 1
             if using_weapon:
                 if overlay_img == overlay_roll20:
                     has_dice = True
-                    if dice_result == -1:
-                        dice_result = random.randint(1, 20)
                 if weapon_timer >= WEAPON_TIME:
                     weapon_timer = 0
-                    dice_result = -1
                     if overlay_img == overlay_heartbreak:
                         overlay_img = overlay_heartbreak2
                         overlay_img2 = overlay_tear
@@ -418,27 +418,35 @@ def main():
                         current_img = pet_images[stage]
                         last_wid = weapons_used.get()
                         # death combo 1 ----
-                        if last_wid == SPRAY and pet['energy'] >= ENERGY_CANSLEEP and pet['waste'] >= WASTE_DIRTY:
+                        if last_wid == SPRAY: # and pet['energy'] >= ENERGY_CANSLEEP and pet['waste'] >= WASTE_DIRTY:
                             curr_wid = weapons_used.get()
                             if curr_wid == IGNITE:
                                 dead, current_img, has_overlay, has_overlay2, has_underlay, has_dice = trigger_death()
                             else:
                                 weapons_used.put(curr_wid)
                         # death combo 2 ----
-                        elif last_wid == (BOIL or SMOKE) \
-                                and pet['hunger'] <= HUNGER_NEEDSTOEAT and pet['waste'] <= WASTE_DIRTY:
+                        elif last_wid == (BOIL or SMOKE): # \
+                                # and pet['hunger'] <= HUNGER_NEEDSTOEAT and pet['waste'] <= WASTE_DIRTY:
                             curr_wid = weapons_used.get()
                             if curr_wid == BURGER:
                                 dead, current_img, has_overlay, has_overlay2, has_underlay, has_dice = trigger_death()
                             else:
                                 weapons_used.put(curr_wid)
+                        # death combo 4 ----
+                        elif last_wid == DICE and dice_result > 17:
+                            curr_wid = weapons_used.get()
+                            print("wid: ", curr_wid)
+                            if curr_wid == SMASH or curr_wid == SWORD:
+                                dead, current_img, has_overlay, has_overlay2, has_underlay, has_dice = trigger_death()
+                            else:
+                                weapons_used.put(curr_wid)
                         # ------------------
+
                         weapon_timer = 0
                         using_weapon = False
                         has_overlay = has_overlay2 = has_underlay = has_dice = False
                 else:
                     weapon_timer += 1
-                pet['power'] += 1
             else:
                 # routine points add/reduce
                 if not sleeping and not dead:
@@ -451,15 +459,15 @@ def main():
                     has_overlay = True
                 # hungry
                 if HUNGER_SICKFROMNOTEATING > pet['hunger'] >= HUNGER_NEEDSTOEAT:
-                    overlay_img2 = overlay_hungry
+                    overlay_img2 = overlay_starving
                     has_overlay2 = True
                 # think about food
                 elif pet['hunger'] >= HUNGER_SICKFROMNOTEATING:
                     overlay_img2 = overlay_starving
                     has_overlay2 = True
                 # pass out
-                if evolving and pet['energy'] < ENERGY_PASSOUT:
-                    current_img, overlay_img, sleeping, has_overlay = trigger_sleep(stage)
+                #if evolving and pet['energy'] < ENERGY_PASSOUT:
+                 #   current_img, overlay_img, sleeping, has_overlay = trigger_sleep(stage)
 
             update_game = False
 

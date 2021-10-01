@@ -100,8 +100,8 @@ smoke_img =     render_image('graphics/option_buttons/wo_smok.png', SELECTOR_SIZ
 vaxx_img =      render_image('graphics/option_buttons/wo_vaxx.png', SELECTOR_SIZE)
 #schrod_img =      render_image('graphics/option_buttons/wo_schrod.png', SELECTOR_SIZE)
 eat_img =       render_image('graphics/option_buttons/wo_eat.png', SELECTOR_SIZE)
-roll_img =      render_image('graphics/option_buttons/wo_roll20.png', SELECTOR_SIZE)
-
+roll_img =      render_image('graphics/option_buttons/wo_rolld20.png', SELECTOR_SIZE)
+swrd_img =      render_image('graphics/option_buttons/wo_sword.png', SELECTOR_SIZE)
 
 # weapon layers
 overlay_flip_flop =     render_image('graphics/weapon_layers/w_flipflop.png', DISPLAY_SIZE)
@@ -120,7 +120,7 @@ overlay_heartbreak =    render_image('graphics/weapon_layers/w_heartbreak1.png',
 overlay_heartbreak2 =   render_image('graphics/weapon_layers/w_heartbreak2.png', DISPLAY_SIZE)
 overlay_smoking =       render_image('graphics/weapon_layers/w_smoking.png', DISPLAY_SIZE)
 overlay_vaccine =       render_image('graphics/weapon_layers/w_vaxx.png', DISPLAY_SIZE)
-overlay_burger =           render_image('graphics/weapon_layers/w_burger.png', DISPLAY_SIZE)
+overlay_burger =        render_image('graphics/weapon_layers/w_burger.png', DISPLAY_SIZE)
 overlay_roll20 =        render_image('graphics/weapon_layers/w_roll20.png', DISPLAY_SIZE)
-
+overlay_sword =         render_image('graphics/weapon_layers/w_sword.png', DISPLAY_SIZE)
 
