@@ -186,6 +186,52 @@ def init_game():
     stat_font = pygame.font.SysFont('ani', 45)
     return font, stat_font
 
+def restart():
+    pet = {'hunger': 0, 'energy': 256, 'waste': 0, 'age': 0, 'happy': 0, 'power': 0}
+
+    # Counters
+    sel_colid = 0
+    sel_rowid = 0
+    statid = 0
+    stage = 0
+    weapon_timer = 0
+    care_timer = 0
+
+    # Flags
+    has_overlay = False
+    has_overlay2 = False
+    has_underlay = False
+    cleaning = False
+    eating = False
+    stats = False
+    sleeping = False
+    using_weapon = False
+    update_game = False
+    evolving = False    # enables routine points cycle and weapon options for a developing pet.
+    dead = False        # removes caring and weapon options, overlays with a grave, keeps final stats.
+    game_over = False   # removes weapon options and the effect of caring options on stats. sets all stats to max.
+    welcome_page = True
+
+    # debug
+    dbg_lvlup = False
+    dbg_lvldown = False
+
+    # Image overlays
+    current_img = egg_img
+    overlay_img = null_img
+    underlay_img = null_img
+
+    weapons_used = queue.Queue(2)
+    weapons_used.put(-1)
+    has_dice = False
+    dice_result = -1
+    game_over_blink = 0
+
+    return pet, sel_colid, sel_rowid, statid, stage, weapon_timer, care_timer, has_overlay, has_overlay2, has_underlay,\
+           cleaning, eating, stats, sleeping, using_weapon, update_game, evolving, dead,game_over, welcome_page,\
+           dbg_lvlup, dbg_lvldown, current_img, overlay_img, underlay_img, weapons_used,  has_dice, dice_result, game_over_blink
+
+
 
 def main():
     if USING_KEYBOARD_BUTTONS:
@@ -216,6 +262,7 @@ def main():
     evolving = False    # enables routine points cycle and weapon options for a developing pet.
     dead = False        # removes caring and weapon options, overlays with a grave, keeps final stats.
     game_over = False   # removes weapon options and the effect of caring options on stats. sets all stats to max.
+    welcome_page = True
 
     # debug
     dbg_lvlup = False
@@ -231,6 +278,11 @@ def main():
     has_dice = False
     dice_result = -1
     game_over_blink = 0
+
+    pet, sel_colid, sel_rowid, statid, stage, weapon_timer, care_timer, has_overlay, has_overlay2, has_underlay, \
+    cleaning, eating, stats, sleeping, using_weapon, update_game, evolving, dead, game_over, welcome_page, \
+    dbg_lvlup, dbg_lvldown, current_img, overlay_img, underlay_img, weapons_used, has_dice, dice_result, game_over_blink \
+        = restart()
 
     # -------------- Game loop -----------------------------------------------------
     while True:
@@ -276,8 +328,17 @@ def main():
                         sel_colid = 6
                         sel_rowid = sel_rowid - 1
         # enter/exit
-        elif button == 1 and not dead:
-            if sel_colid == 2:          # stats
+        elif button == 1:
+            if welcome_page:
+                welcome_page = False
+                current_img = egg_img
+            elif game_over or dead:
+                welcome_page = True # and init() everything #TODO
+                pet, sel_colid, sel_rowid, statid, stage, weapon_timer, care_timer, has_overlay, has_overlay2, has_underlay, \
+                cleaning, eating, stats, sleeping, using_weapon, update_game, evolving, dead, game_over, welcome_page, \
+                dbg_lvlup, dbg_lvldown, current_img, overlay_img, underlay_img, weapons_used, has_dice, dice_result, game_over_blink \
+                    = restart()
+            elif sel_colid == 2:          # stats
                 stats = not stats
             elif stage == 0:            # non-stats options, egg stage
                 current_img = egg_bounce_img
@@ -464,7 +525,7 @@ def main():
                     weapon_timer += 1
             else:
                 # routine points add/reduce
-                if not sleeping and not dead:
+                if not sleeping and not dead and not welcome_page:
                     do_cycle(pet, game_over)
 
             if evolving and not sleeping and not cleaning and not eating and not using_weapon and not dead:
@@ -484,25 +545,11 @@ def main():
                 #if evolving and pet['energy'] < ENERGY_PASSOUT:
                  #   current_img, overlay_img, sleeping, has_overlay = trigger_sleep(stage)
 
+            if welcome_page:
+                current_img = welcome_img
             update_game = False
 
         # Rendering  -----------------------------------------------------
-        # Render care options
-        if not dead:
-            render_caring()
-
-        # Render weapon choices to appear according to stage
-        if evolving and not dead:
-            render_weapons(stage)
-
-        # Render selector
-        if not dead:
-            screen.blit(pygame.transform.flip(selector_img, True, False),
-                        (SELECTOR_X + (sel_colid * SELECTOR_X_GAP), SELECTOR_Y + (sel_rowid * SELECTOR_Y_GAP)))
-
-        # Render display (Create a surface for pet display)
-        display = pygame.Surface(DISPLAY_SIZE)
-
         # Render debug
         if __debug__:
             render_debug(font, pet, stage)
@@ -511,43 +558,65 @@ def main():
         if not USING_KEYBOARD_BUTTONS:
             render_buttons(BTN_X, BTN_Y)
 
-        # Stats display logic  -----------------------------------------------------
-        if stats:
-            display.blit(stat_bg_img, (0, 0))
-            if statid == 4:     # energy, happiness
-                bar_prog = 13 - int(pet[stat_keys[statid]] * 13 / stat_bar_limits[statid])
-            else:
-                bar_prog = int(pet[stat_keys[statid]] * 13 / stat_bar_limits[statid])
-            if bar_prog > 13:
-                bar_prog = 13
-            if bar_prog < 0:
-                bar_prog = 0
-            display.blit(stat_images[statid], (0, 0))
-            if statid == 1:     # age
-                text = "{}".format(pet['age'])
-                stat_data = stat_font.render(text, True, STAT_COLOR)
-                text_rect = stat_data.get_rect(center=(DISPLAY_WIDTH / 2, DISPLAY_WIDTH / 2 + 32))
-                display.blit(stat_data, text_rect)
-            else:
-                display.blit(bar_img[bar_prog], (0, 0))
-            render_display(display, NONPIXEL_COLOR)
+        # Render display (Create a surface for pet display)
+        display = pygame.Surface(DISPLAY_SIZE)
+        if welcome_page:
+            display.blit(welcome_img, (0, 0))
 
-        # Pet display logic
+        # Render care options
         else:
-            display.blit(bg_img, (0, 0))
-            if has_underlay:
-                display.blit(underlay_img, (0, 0))  # underlays display with an image
-            display.blit(current_img, (0, 0))       # overlays display with an image
-            if has_overlay:
-                display.blit(overlay_img, (0, 0))   # overlays display with an image
-            if has_overlay2:
-                display.blit(overlay_img2, (0, 0))  # overlays display with an image
-            if has_dice:
-                text = "{}".format(dice_result)
-                d20 = stat_font.render(text, True, PIXEL_COLOR)
-                text_rect = d20.get_rect(center=(DISPLAY_WIDTH / 2 - 55, DISPLAY_WIDTH / 2 + 45))
-                display.blit(d20, text_rect)
-            render_display(display, NONPIXEL_COLOR)
+            if not dead:
+                render_caring()
+
+            # Render weapon choices to appear according to stage
+            if evolving and not dead:
+                render_weapons(stage)
+
+            # Render selector
+            if not dead:
+                screen.blit(pygame.transform.flip(selector_img, True, False),
+                            (SELECTOR_X + (sel_colid * SELECTOR_X_GAP), SELECTOR_Y + (sel_rowid * SELECTOR_Y_GAP)))
+
+
+
+        # Stats display logic  -----------------------------------------------------
+            if stats:
+                display.blit(stat_bg_img, (0, 0))
+                if statid == 4:     # energy, happiness
+                    bar_prog = 13 - int(pet[stat_keys[statid]] * 13 / stat_bar_limits[statid])
+                else:
+                    bar_prog = int(pet[stat_keys[statid]] * 13 / stat_bar_limits[statid])
+                if bar_prog > 13:
+                    bar_prog = 13
+                if bar_prog < 0:
+                    bar_prog = 0
+                display.blit(stat_images[statid], (0, 0))
+                if statid == 1:     # age
+                    text = "{}".format(pet['age'])
+                    stat_data = stat_font.render(text, True, STAT_COLOR)
+                    text_rect = stat_data.get_rect(center=(DISPLAY_WIDTH / 2, DISPLAY_WIDTH / 2 + 32))
+                    display.blit(stat_data, text_rect)
+                else:
+                    display.blit(bar_img[bar_prog], (0, 0))
+                render_display(display, NONPIXEL_COLOR)
+
+            # Pet display logic
+            else:
+                display.blit(bg_img, (0, 0))
+                if has_underlay:
+                    display.blit(underlay_img, (0, 0))  # underlays display with an image
+                display.blit(current_img, (0, 0))       # overlays display with an image
+                if has_overlay:
+                    display.blit(overlay_img, (0, 0))   # overlays display with an image
+                if has_overlay2:
+                    display.blit(overlay_img2, (0, 0))  # overlays display with an image
+                if has_dice:
+                    text = "{}".format(dice_result)
+                    d20 = stat_font.render(text, True, PIXEL_COLOR)
+                    text_rect = d20.get_rect(center=(DISPLAY_WIDTH / 2 - 55, DISPLAY_WIDTH / 2 + 45))
+                    display.blit(d20, text_rect)
+
+        render_display(display, NONPIXEL_COLOR)
         pygame.display.update()
         clock.tick(FPS)
 

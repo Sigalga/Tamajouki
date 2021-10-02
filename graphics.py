@@ -129,3 +129,4 @@ underlay_assassin =     render_image('graphics/weapon_layers/w_assassin_ul.png',
 
 # game over overlay
 overlay_game_over = render_image('graphics/game_over.png', DISPLAY_SIZE)
+welcome_img =       render_image('graphics/welcome.png', DISPLAY_SIZE)
