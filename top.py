@@ -147,6 +147,18 @@ def get_keyboard_button(serial_string):
     return button
 
 
+def get_button_key(pressed_key):
+    if pressed_key == pygame.K_q:       # left
+        button = 0
+    elif pressed_key == pygame.K_w:       # enter
+        button = 1
+    elif pressed_key == pygame.K_e:     #right
+        button = 2
+    else:
+        button = None
+    return button
+
+
 def update_serial_string(serial_port):
     # Wait until there is data waiting in the serial buffer
     if serial_port.in_waiting > 0:
@@ -173,7 +185,7 @@ def init_game():
     pygame.time.set_timer(USEREVENT + 1, SECOND)
 
     # Create a canvas on which to display everything
-    if __debug__ or not USING_KEYBOARD_BUTTONS:
+    if USING_COMPUTER_CURSOR:
         screen_height = SCREEN_HEIGHT_L
     else:
         screen_height = SCREEN_HEIGHT_S
@@ -234,7 +246,7 @@ def restart():
 
 
 def main():
-    if USING_KEYBOARD_BUTTONS:
+    if USING_CONSOLE_KEYBOARD:
         serial_port, serial_string = init_serial()
     font, stat_font = init_game()
 
@@ -286,12 +298,13 @@ def main():
 
     # -------------- Game loop -----------------------------------------------------
     while True:
-        if USING_KEYBOARD_BUTTONS:
+        if USING_CONSOLE_KEYBOARD:
             serial_string = update_serial_string(serial_port)
 
         screen.fill(BG_COLOR)
         mousex = 0
         mousey = 0
+        pressed_key = None
 
         # Event handler
         for event in pygame.event.get():
@@ -302,12 +315,17 @@ def main():
                 mousex, mousey = event.pos
             elif event.type == USEREVENT + 1 and not dead:
                 update_game = True
+            elif event.type == pygame.KEYUP:
+                pressed_key = event.key
+
 
         # Buttons logic -----------------------------------------------------
-        if not USING_KEYBOARD_BUTTONS or __debug__:
-            button = get_button_at_pixel(mousex, mousey)
-        else:
+        if USING_CONSOLE_KEYBOARD:
             button = get_keyboard_button(serial_string)
+        elif USING_COMPUTER_KEYBOARD:
+            button = get_button_key(pressed_key)
+        else:
+            button = get_button_at_pixel(mousex, mousey)
 
         # move left
         if button == 0:
@@ -555,7 +573,7 @@ def main():
             render_debug(font, pet, stage)
 
         # Render buttons
-        if not USING_KEYBOARD_BUTTONS:
+        if USING_COMPUTER_CURSOR:
             render_buttons(BTN_X, BTN_Y)
 
         # Render display (Create a surface for pet display)
@@ -622,9 +640,16 @@ def main():
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 2 and sys.argv[1] == "-K":
-        USING_KEYBOARD_BUTTONS = True
-        SERIAL_PORT = sys.argv[2]
+    USING_CONSOLE_KEYBOARD = False
+    USING_COMPUTER_KEYBOARD = True
+    USING_COMPUTER_CURSOR = False
+  #  if len(sys.argv) > 2 and sys.argv[1] == "-K":
+   #     USING_CONSOLE_KEYBOARD = True
+    #    SERIAL_PORT = sys.argv[2]
+ #   elif len(sys.argv) > 2 and sys.argv[1] == "-QWE":
+  #      USING_COMPUTER_KEYBOARD = True
+#    else:
+ #       USING_COMPUTER_CURSOR = True
     main()
 
 

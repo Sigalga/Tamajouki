@@ -80,8 +80,8 @@ overlay_sleep =     render_image('graphics/n_sleep.png', DISPLAY_SIZE)
 overlay_feed =       render_image('graphics/n_feed.png', DISPLAY_SIZE)
 overlay_clean =     render_image('graphics/n_clean.png', DISPLAY_SIZE)
 overlay_stink =     render_image('graphics/n_stink.png', DISPLAY_SIZE)
-overlay_hungry =    render_image('graphics/n_hungry.png', DISPLAY_SIZE)
-overlay_starving =  render_image('graphics/n_starving.png', DISPLAY_SIZE)
+overlay_hungry =    null_img # render_image('graphics/n_hungry.png', DISPLAY_SIZE)
+overlay_starving =  render_image('graphics/n_starving2.png', DISPLAY_SIZE)
 
 # weapon options
 smash_img =     render_image('graphics/option_buttons/wo_smsh.png', SELECTOR_SIZE)
