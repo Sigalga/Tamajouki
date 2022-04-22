@@ -1,4 +1,5 @@
 # Tamajouki
+Run configurations on PyCharm (Ubuntu/Windows)
 ------------------------------------------------------------------------------------
 
 To run the game in release mode:
@@ -11,7 +12,8 @@ In debug mode the game displays a stats board, and quick level up/down buttons.
 If using mouse to play the game:
 Do not provide any command line parameters.
 
-------------------------------------------------------------------------------------
+If using computer keyboard to play:
+set the parameters to `-QWE`.
 
 To use the 3-button USB keyboard:
 
