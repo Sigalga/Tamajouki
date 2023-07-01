@@ -1,4 +1,12 @@
 # Tamajouki
+To play the demo on Windows using the cursor, download mouse_v1.0.0 version under the Release section.
+Extract Tamajouki.rar and run Tamajouki.exe.
+Use the cursor to press the pink buttons at the bottom:
+Left/right buttons - navigation
+Middle button - selection
+
+![Screenshot 2023-07-01 180904](https://github.com/Sigalga/Tamajouki/assets/53434909/10cf7fa6-e048-4cbd-a6d7-8926a229f17d)
+
 Run configurations on PyCharm (Ubuntu/Windows)
 ------------------------------------------------------------------------------------
 
