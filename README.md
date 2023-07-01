@@ -5,7 +5,7 @@ Use the cursor to press the pink buttons at the bottom:
 Left/right buttons - navigation
 Middle button - selection
 
-![Screenshot 2023-07-01 180904](https://github.com/Sigalga/Tamajouki/assets/53434909/10cf7fa6-e048-4cbd-a6d7-8926a229f17d)
+![Screenshot 2023-07-01 1809042](https://github.com/Sigalga/Tamajouki/assets/53434909/dc19fcd8-db97-4095-9d5d-3f2028d60da9)
 
 Run configurations on PyCharm (Ubuntu/Windows)
 ------------------------------------------------------------------------------------
